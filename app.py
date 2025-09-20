@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 warnings.filterwarnings('ignore')
 
-# Initialize Flask app
-app = Flask(__name__)
+# Serve files from the root directory
+app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # Enable CORS for frontend access
 
 # Global variables for clients
@@ -95,6 +95,7 @@ def generate_audio_response(ai_message: str) -> str:
             variation=4
         )
         if resp["success"] and resp.get("encoded_audio"):
+            # Always save as MP3
             return murf_client.save_audio(resp["encoded_audio"], folder="audios", filename="ai_response.mp3")
         else:
             raise RuntimeError("Speech generation failed or no audio returned.")
@@ -102,18 +103,11 @@ def generate_audio_response(ai_message: str) -> str:
         logger.error(f"Audio generation error: {e}")
         raise
 
-# --- Deployment Change: Serve the frontend application ---
-@app.route("/", methods=["GET"])
-def serve_index():
-    """Serves the main index.html file from the root directory."""
+# Route to serve the main index.html file
+@app.route('/')
+def index():
     return send_from_directory('.', 'index.html')
 
-@app.route("/assets/<path:filename>", methods=["GET"])
-def serve_assets(filename):
-    """Serves static files (CSS, JS) from the 'assets' directory."""
-    return send_from_directory('assets', filename)
-
-# --- API Routes (Original logic unchanged) ---
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
@@ -125,22 +119,6 @@ def health():
             "text_to_speech": "available" if murf_client is not None else "unavailable"
         }
     }), 200
-
-@app.route("/test", methods=["POST"])
-def test_endpoint():
-    try:
-        logger.info("Test endpoint called")
-        data = request.json
-        logger.info(f"Received data: {data}")
-        return jsonify({
-            "received": data,
-            "message": "Test endpoint working perfectly",
-            "type": "test",
-            "status": "success"
-        }), 200
-    except Exception as e:
-        logger.error(f"Test endpoint error: {e}")
-        return jsonify({"error": str(e)}), 500
 
 @app.route("/chat", methods=["POST"])
 def chat_endpoint():
@@ -154,9 +132,13 @@ def chat_endpoint():
 
         user_message = data.get("user_message")
         dtype = data.get("dtype")
+        # --- FIX: Get the message history from the request ---
+        messages_history = data.get("messages", [])
 
         logger.info(f"User message: {user_message}")
         logger.info(f"Data type: {dtype}")
+        logger.info(f"Messages history length: {len(messages_history)}")
+
 
         if dtype not in ("audio", "message"):
             logger.error(f"Invalid dtype: {dtype}")
@@ -166,54 +148,80 @@ def chat_endpoint():
             return jsonify({"error": "Missing or empty user_message"}), 400
 
         if dtype == "audio":
-            # Audio processing logic remains the same
-            # ...
-            pass
-        elif dtype == "message":
-            # Text message logic remains the same
-            # ...
-            pass
-        # For brevity, the original logic inside the if/elif is omitted but should be kept
-        # The following is a placeholder for the original logic.
-        if dtype == "audio":
             logger.info("Processing audio message...")
             try:
+                logger.info(f"Transcribing audio file: {user_message}")
                 transcribed_text = transcribe_audio(user_message)
+                logger.info(f"Transcribed text: {transcribed_text}")
             except FileNotFoundError as e:
+                logger.error(f"Audio file not found: {e}")
                 return jsonify({"error": str(e)}), 400
             except Exception as e:
+                logger.error(f"Audio transcription failed: {e}")
                 return jsonify({"error": "Audio transcription failed: " + str(e)}), 500
-            ai_response = generate_ai_response(transcribed_text)
-            audio_filepath = generate_audio_response(ai_response)
-            return jsonify({
+
+            try:
+                logger.info("Generating AI response for transcribed text...")
+                ai_response = generate_ai_response(transcribed_text)
+                logger.info(f"AI response: {ai_response}")
+            except Exception as e:
+                logger.error(f"AI response generation failed: {e}")
+                return jsonify({"error": "AI response generation failed: " + str(e)}), 500
+
+            try:
+                logger.info("Generating audio response...")
+                audio_filepath = generate_audio_response(ai_response)
+                logger.info(f"Audio file saved: {audio_filepath}")
+            except Exception as e:
+                logger.error(f"Audio generation failed: {e}")
+                return jsonify({"error": "Audio generation failed: " + str(e)}), 500
+
+            response = {
                 "content": ai_response,
                 "audio_filepath": audio_filepath,
                 "transcribed_text": transcribed_text,
                 "type": "audio"
-            })
+            }
+            logger.info(f"Returning audio response: {response}")
+            return jsonify(response)
+
         elif dtype == "message":
             logger.info("Processing text message...")
             try:
-                ai_response = generate_ai_response(user_message)
-                return jsonify({"content": ai_response, "type": "message"})
+                # --- FIX: Create the full conversation context ---
+                conversation = [item['content'] for item in messages_history]
+                
+                logger.info("Generating AI response for text message...")
+                # --- FIX: Pass the full conversation to the AI ---
+                ai_response = generate_ai_response(conversation)
+                
+                logger.info(f"AI response: {ai_response}")
+                response = {
+                    "content": ai_response,
+                    "type": "message"
+                }
+                logger.info(f"Returning text response: {response}")
+                return jsonify(response)
             except Exception as e:
                 logger.error(f"AI response generation failed: {e}")
-                return jsonify({
+                fallback_response = {
                     "content": "I'm having trouble connecting right now. Let's try again in a moment.",
                     "type": "message"
-                })
+                }
+                logger.info("Returning fallback response")
+                return jsonify(fallback_response)
 
     except Exception as e:
         logger.error(f"Server error: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({"error": "Server error: " + str(e)}), 500
 
-
 @app.route('/upload-audio', methods=['POST'])
 def upload_audio():
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
     audio_file = request.files['audio']
+    # Always save as mp3
     filename = 'user_audio.mp3'
     save_path = os.path.join('audios', filename)
     os.makedirs('audios', exist_ok=True)
@@ -224,27 +232,24 @@ def upload_audio():
 def serve_audio(filename):
     return send_from_directory('audios', filename)
 
-# --- Error Handlers (Unchanged) ---
 @app.errorhandler(404)
 def not_found(error):
-    return jsonify({"error": "Endpoint not found"}), 404
-
-@app.errorhandler(405)
-def method_not_allowed(error):
-    return jsonify({"error": "Method not allowed"}), 405
+    # For any 404, just send back the main app page.
+    return send_from_directory('.', 'index.html')
 
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5001))
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() in ["true", "1", "t"]
+    
     logger.info("Starting AI Therapist Flask Server...")
     logger.info("Initializing backend clients...")
     initialize_clients()
     
-    port = int(os.environ.get('PORT', 5001))
-    debug_mode = os.environ.get('FLASK_ENV') == 'development'
-
-    logger.info(f"Starting Flask server on http://0.0.0.0:{port}")
-    logger.info(f"Debug mode: {debug_mode}")
+    logger.info(f"Starting Flask server on port {port}, Debug: {debug_mode}")
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
+
+
