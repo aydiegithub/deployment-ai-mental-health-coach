@@ -132,7 +132,6 @@ def chat_endpoint():
 
         user_message = data.get("user_message")
         dtype = data.get("dtype")
-        # --- FIX: Get the message history from the request ---
         messages_history = data.get("messages", [])
 
         logger.info(f"User message: {user_message}")
@@ -161,9 +160,15 @@ def chat_endpoint():
                 return jsonify({"error": "Audio transcription failed: " + str(e)}), 500
 
             try:
+                # --- FIX: Create the full conversation context for audio ---
+                conversation = [item['content'] for item in messages_history]
+                conversation.append(transcribed_text)
+
                 logger.info("Generating AI response for transcribed text...")
-                ai_response = generate_ai_response(transcribed_text)
+                # --- FIX: Pass the full conversation to the AI ---
+                ai_response = generate_ai_response(conversation)
                 logger.info(f"AI response: {ai_response}")
+
             except Exception as e:
                 logger.error(f"AI response generation failed: {e}")
                 return jsonify({"error": "AI response generation failed: " + str(e)}), 500
@@ -188,11 +193,11 @@ def chat_endpoint():
         elif dtype == "message":
             logger.info("Processing text message...")
             try:
-                # --- FIX: Create the full conversation context ---
+                # Create the full conversation context
                 conversation = [item['content'] for item in messages_history]
                 
                 logger.info("Generating AI response for text message...")
-                # --- FIX: Pass the full conversation to the AI ---
+                # Pass the full conversation to the AI
                 ai_response = generate_ai_response(conversation)
                 
                 logger.info(f"AI response: {ai_response}")
@@ -251,5 +256,3 @@ if __name__ == "__main__":
     
     logger.info(f"Starting Flask server on port {port}, Debug: {debug_mode}")
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
-
-
