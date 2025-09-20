@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindSpace - AI Therapy Assistant</title>
+    <link rel="stylesheet" href="assets/main.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landingPage" class="page active">
+        <div class="landing-container">
+            <!-- Background -->
+            <div class="landing-bg"></div>
+            
+            <!-- Content -->
+            <div class="landing-content">
+                <!-- Header -->
+                <header class="landing-header">
+                    <div class="brand">
+                        <div class="brand-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h1 class="brand-name">MindSpace</h1>
+                    </div>
+                    <p class="brand-tagline">Your Personal AI Therapy Assistant</p>
+                </header>
+
+                <!-- Main Content -->
+                <main class="landing-main">
+                    <div class="welcome-section">
+                        <h2 class="welcome-title">Choose Your Preferred Experience</h2>
+                        <p class="welcome-subtitle">Connect with our AI therapist through voice or text conversations in a safe, confidential environment</p>
+                    </div>
+
+                    <!-- Service Cards -->
+                    <div class="service-grid">
+                        <!-- Voice Chat Card -->
+                        <div class="service-card voice-card" onclick="switchToVoiceMode()">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-microphone-alt"></i>
+                                </div>
+                                <div class="card-status">
+                                    <span class="status-dot"></span>
+                                    <span class="status-text">Voice Ready</span>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <h3 class="card-title">Voice Therapy</h3>
+                                <p class="card-description">Natural conversation with real-time voice responses and emotional understanding</p>
+                                <div class="card-features">
+                                    <span class="feature-tag">Real-time Processing</span>
+                                    <span class="feature-tag">Natural Speech</span>
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <span class="action-text">Start Speaking</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <!-- Text Chat Card -->
+                        <div class="service-card chat-card" onclick="switchToChatMode()">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div class="card-status">
+                                    <span class="status-dot"></span>
+                                    <span class="status-text">Chat Ready</span>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <h3 class="card-title">Text Therapy</h3>
+                                <p class="card-description">Thoughtful written conversation with full history and session management</p>
+                                <div class="card-features">
+                                    <span class="feature-tag">Session History</span>
+                                    <span class="feature-tag">Private & Secure</span>
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <span class="action-text">Start Typing</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Footer -->
+                <footer class="landing-footer">
+                    <div class="security-info">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>End-to-end encrypted • HIPAA compliant • Your privacy is our priority</span>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- Voice Chat Page -->
+    <div id="voicePage" class="page">
+        <div class="voice-container">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="nav-button" onclick="goToLanding()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="header-title">
+                        <h1>Voice Therapy</h1>
+                        <span class="session-info">Active Session</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div id="voiceConnectionStatus" class="connection-status disconnected">
+                        <div class="status-indicator"></div>
+                        <span class="status-label">Connecting...</span>
+                    </div>
+                    <button class="switch-button" onclick="switchToChatMode()">
+                        <i class="fas fa-comments"></i>
+                        <span>Text Mode</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Voice Interface -->
+            <main class="voice-main">
+                <div class="voice-interface">
+                    <!-- Voice Visualizer -->
+                    <div class="voice-visualizer">
+                        <div id="voiceAnimation" class="voice-circle">
+                            <div class="voice-inner">
+                                <div class="mic-container">
+                                    <i id="micIcon" class="fas fa-microphone"></i>
+                                </div>
+                                <div class="pulse-ring"></div>
+                                <div class="pulse-ring delay-1"></div>
+                                <div class="pulse-ring delay-2"></div>
+                            </div>
+                            <!-- Audio Visualizer Bars -->
+                            <div class="audio-visualizer">
+                                <!-- Bars will be generated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Display -->
+                    <div class="status-display">
+                        <h2 id="voiceStatusText" class="status-text">Ready to listen...</h2>
+                        <p class="status-hint">Press spacebar to interrupt • Speak naturally</p>
+                    </div>
+
+                    <!-- Voice Controls -->
+                    <div class="voice-controls">
+                        <button id="recordBtn" class="primary-control">
+                            <div class="control-icon">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <span class="control-label">Start Conversation</span>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Hidden Audio Element -->
+        <audio id="responseAudio" style="display: none;"></audio>
+    </div>
+
+    <!-- Text Chat Page -->
+    <div id="chatPage" class="page">
+        <div class="chat-container">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="nav-button" onclick="goToLanding()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="header-title">
+                        <h1>Text Therapy</h1>
+                        <span class="session-info">Secure Chat</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div id="chatConnectionStatus" class="connection-status disconnected">
+                        <div class="status-indicator"></div>
+                        <span class="status-label">Connecting...</span>
+                    </div>
+                    <button class="switch-button" onclick="switchToVoiceMode()">
+                        <i class="fas fa-microphone-alt"></i>
+                        <span>Voice Mode</span>
+                    </button>
+                    <button id="clearChatBtn" class="action-button" title="Clear Chat">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Chat Area -->
+            <main class="chat-main">
+                <div id="chatMessages" class="chat-messages">
+                    <div id="messagesContainer" class="messages-container">
+                        <!-- Welcome Message -->
+                        <div class="welcome-message">
+                            <div class="welcome-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="welcome-content">
+                                <h3>Welcome to Your Safe Space</h3>
+                                <p>I'm here to listen and provide support through our conversation. Feel free to share what's on your mind.</p>
+                                <div class="welcome-features">
+                                    <span class="feature-badge">
+                                        <i class="fas fa-comments"></i>
+                                        Text Chat
+                                    </span>
+                                    <span class="feature-badge">
+                                        <i class="fas fa-microphone-alt"></i>
+                                        Voice Support
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div id="typingIndicator" class="typing-indicator">
+                            <div class="typing-bubble">
+                                <div class="typing-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                <span class="typing-text">AI is thinking...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="chat-input-area">
+                    <div class="input-container">
+                        <div class="input-wrapper">
+                            <textarea id="chatInput" class="chat-input" placeholder="Share your thoughts... I'm here to listen" rows="1"></textarea>
+                            <button id="sendButton" class="send-button" disabled>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="input-footer">
+                            <span class="input-hint">Press Enter to send • Shift+Enter for new line</span>
+                            <div class="input-features">
+                                <span class="feature-indicator">
+                                    <i class="fas fa-shield-alt"></i>
+                                    Encrypted
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="assets/ai.js"></script>
+</body>
+</html>
