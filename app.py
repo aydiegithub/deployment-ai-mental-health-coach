@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from backend.orchastrator import Orchestrator
+from speech_to_text import SpeechToText
+from text_to_speech import MurfTTSClient
 import os
 import warnings
 import traceback
@@ -16,9 +19,9 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # Enable CORS for frontend access
 
 # Global variables for clients
-orch = None
-sst_client = None
-murf_client = None
+orch = Orchestrator()
+sst_client = SpeechToText()
+murf_client = MurfTTSClient()
 
 def initialize_clients():
     global orch, sst_client, murf_client
@@ -226,7 +229,7 @@ def upload_audio():
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
     audio_file = request.files['audio']
-    # Always save as mp3
+    # Always save as MP3
     filename = 'user_audio.mp3'
     save_path = os.path.join('audios', filename)
     os.makedirs('audios', exist_ok=True)
