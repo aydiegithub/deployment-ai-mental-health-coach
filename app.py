@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 import uuid
 
-# Configure logging
+# Configure 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
